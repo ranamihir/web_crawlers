@@ -1,4 +1,4 @@
-# This is a script which download all placement data (branch-wise) from channel-i to separate files.
+# This is a script which downloads all placement (student) data from channel-i to separate files (branch-wise).
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -39,6 +39,7 @@ for row in rows:
     selected_students.append(cells[3].text)
     stats_urls.append(cells[4].find_element_by_tag_name('a').get_attribute('href'))
 
+# Print total number of files to be downloaded
 total_files = str(len(serials))
 print(str(total_files) + ' files will be downloaded.\n')
 
@@ -49,15 +50,22 @@ for serial in serials:
     filename = serial + '. ' + branches[s_no] + ' (' + degrees[s_no] + ').dat'
     print('Downloading file '+ str(s_no+1) + '/' + total_files + ': \'' + filename + '\'')
 
+    # Create 'Data' folder
     if not os.path.exists('Data'):
         os.makedirs('Data')
+
+    # Open data file
     f = open('Data/' + filename, 'w+')
+
+    # Scrape data
     data_rows = WebDriverWait(browser, 15).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'tr')))
     for data_row in data_rows:
         data_cells = data_row.find_elements_by_tag_name('td')
         for data_cell in data_cells[1:]:
             f.write(data_cell.text + '|')
         f.write('\n')
+
+    # Close data file
     f.close()
 
 # Safely quit browser
