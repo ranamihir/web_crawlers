@@ -18,6 +18,7 @@ username.send_keys('<username>') # Replace <username> with your username
 password = WebDriverWait(browser, 1).until(EC.presence_of_element_located((By.NAME, 'password')))
 password.send_keys('<password>') # Replace <password> with your password
 submit = browser.find_element_by_id('sign_in_button').click()
+
 # Open Placement Online Results page
 browser.get('https://channeli.in/placement/results/branch/')
 
@@ -54,7 +55,7 @@ for serial in serials:
     data_rows = WebDriverWait(browser, 15).until(EC.presence_of_all_elements_located((By.TAG_NAME, 'tr')))
     for data_row in data_rows:
         data_cells = data_row.find_elements_by_tag_name('td')
-        for data_cell in data_row.find_elements_by_tag_name('td'):
+        for data_cell in data_cells[1:]:
             f.write(data_cell.text + '|')
         f.write('\n')
     f.close()
