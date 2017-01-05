@@ -1,4 +1,4 @@
-# This is a script which download all placement data (branch-wise) from channel-i to one file.
+# This is a script which downloads all placement (student and company) data from channel-i to 2 separate files.
 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
