@@ -1,28 +1,34 @@
 from selenium import webdriver
-from os.path import isfile, join
 from urllib import request, error
-import sys
-import os
+from os import makedirs, path, listdir, remove
+from os.path import isfile, join
 import time
+import sys
 
-
-def reporthook(blocknum, blocksize, totalsize):
-    readsofar = (blocknum * blocksize)
-    if totalsize > 0:
-        percent = min(readsofar * 1e2 / totalsize, 100.0)
-        s = '\r%5.1f%% %*.2f mb / %.2f mb' % (
-            percent, len(str(totalsize)), readsofar / (1024 * 1024), totalsize / (1024 * 1024))
-        sys.stderr.write(s)
-        if readsofar >= totalsize:
-            sys.stderr.write('\n')
+def reporthook(count, block_size, total_size):
+    progress_size = int(count * block_size)
+    if total_size > 0:
+        global start_time
+        if count == 0:
+            start_time = time.time()
+            return
+        seconds = time.time() - start_time
+        minutes, seconds = divmod(seconds, 60)
+        hours, minutes = divmod(minutes, 60)
+        speed = int(progress_size / (1024 * seconds))
+        percent = min(float(count * block_size * 100 / total_size), 100.0)
+        s = '\r%5.1f%% %*.2f MB / %.2f MB %5d KB/s\tTime elapsed: %d:%d:%s seconds' % (percent, len(str(total_size)), progress_size / (1024 * 1024), total_size / (1024 * 1024), speed, hours, minutes, str(int(seconds)).zfill(2))
+        sys.stdout.write(s)
+        sys.stdout.flush()
     else:
-        sys.stderr.write('read %d\n' % (readsofar,))
+        sys.stderr.write('Read %d\n' % (progress_size,))
 
 tv_shows = {
     'Mad Men': {
         '1': 'https://fmovies.to/film/mad-men-1.y4xp',
         '2': 'https://fmovies.to/film/mad-men-2.x398',
-        '3': 'https://fmovies.se/film/mad-men-3.w2v6'
+        '3': 'https://fmovies.se/film/mad-men-3.w2v6',
+        '4': 'https://fmovies.to/film/mad-men-4.zjy2'
     }
 }
 
@@ -35,16 +41,16 @@ for show in tv_shows:
             url = 'https://fmovies.to/'
             browser.get(tv_shows[show][season])
             season_name = show + ' - Season ' + season
-            print('Downloading episodes of ' + season_name + '...')
+            print('\nDownloading episodes of ' + season_name + '...')
 
             season_path = './FMovies/' + show + '/' + season_name + '/'
-            if not os.path.exists(season_path):
-                os.makedirs(season_path)
+            if not path.exists(season_path):
+                makedirs(season_path)
 
             # Check if all episodes have already been downloaded.
             episodes = browser.find_element_by_class_name('episodes').find_elements_by_tag_name('li')
             num_episodes = len(episodes)
-            num_files = len([f for f in os.listdir(season_path) if isfile(join(season_path, f))])
+            num_files = len([f for f in listdir(season_path) if isfile(join(season_path, f))])
             if num_episodes == num_files:
                 print('All episodes of ' + season_name + ' have been downloaded.')
                 break
@@ -77,10 +83,10 @@ for show in tv_shows:
                     request.urlretrieve(download_url, filepath, reporthook)
                 except error.ContentTooShortError:
                     print('\nDownload Failed. Internet disconnected in between.')
-                    os.remove(filepath)
+                    remove(filepath)
                 except Exception as e:
                     print(str(e))
-                    os.remove(filepath)
+                    remove(filepath)
                 finally:
                     video_count += 1
 
