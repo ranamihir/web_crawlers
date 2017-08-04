@@ -19,12 +19,12 @@ label = browser.find_element_by_id("roundTrip__trigger")
 label.click()
 
 # Input source location
-source_airport = browser.find_element_by_id("ObeFlights1_autoOrigin_AutoText")
+source_airport = browser.find_element_by_id("ObeFlights1_autoOriginHome_AutoText")
 source_airport.click()
 source_airport.send_keys(source + Keys.ENTER)
 
 # Input destination location
-destination_airport = browser.find_element_by_id("ObeFlights1_autoDestination_AutoText")
+destination_airport = browser.find_element_by_id("ObeFlights1_autoDestinationHome_AutoText")
 destination_airport.click()
 destination_airport.send_keys(destination + Keys.ENTER)
 
@@ -64,9 +64,9 @@ while 1:
             browser.find_element_by_class_name("ui-datepicker-next").click()
         else:
             break
-    if current_first_year < end_year:
+    elif current_first_year < end_year:
         returnCalendar.find_element_by_class_name("ui-datepicker-next").click()
-    elif current_first_year > end_year:
+    else:
         print('ERROR: Incorrect End Year.')
         sys.exit(0)
 end = month_titles[titles.index(end_month)].find_element_by_link_text(end_date)
