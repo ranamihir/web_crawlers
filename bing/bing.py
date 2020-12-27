@@ -15,6 +15,7 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, U
 from urllib.parse import quote, unquote_plus, urlsplit, urlunsplit
 
 import numpy as np
+import pandas as pd
 import yaml
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -22,7 +23,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.remote.webelement import WebElement
 
-# Set config variables here
+# Set your config variables here
 PARENT_DIR = "~/Documents/bing/"
 CHROMEDRIVER_PATH = "~/AppData/Local/Programs/Python/Python38-32/chromedriver.exe"  # Only required for Windows
 EXTRA_DELAY = 1
@@ -1312,7 +1313,7 @@ def get_differential_cash(points: int, points_cash_dict: Dict[int, float], thres
             break
 
 
-def print_summary(results_dict: _ResultsDict) -> None:
+def print_summary(results_dict: _ResultsDict, diff: Optional[bool] = True) -> None:
     """
     Print out the points and cash
     for each user and in total.
@@ -1329,9 +1330,28 @@ def print_summary(results_dict: _ResultsDict) -> None:
         assert sorted(results["cash"].keys()) == sorted(total_cash.keys())
         total_cash = {k: v + results["cash"][k] for k, v in total_cash.items()}
 
-        PRINT_SUCCESS(f"{username:{max_len}}: {get_points_cash_by_type_str(results['points'], results['cash'])}")
+    #     PRINT_SUCCESS(f"{username:{max_len}}: {get_points_cash_by_type_str(results['points'], results['cash'])}")
 
-    PRINT_SUCCESS(f"\nTotal Point Tally: {get_points_cash_by_type_str(total_points, total_cash)}\n")
+    # PRINT_SUCCESS(f"\nTotal Point Tally: {get_points_cash_by_type_str(total_points, total_cash)}\n")
+
+    # Prepare summary dataframe
+    results_df = pd.DataFrame(results_dict).T
+    results_df.index.name = "Email"
+    results_df["MS Cash"] = results_df["cash"].apply(lambda row: row["microsoft"])
+    results_df["Non-MS Cash"] = results_df["cash"].apply(lambda row: row["non_microsoft"])
+    results_df = results_df.drop(columns="cash").reset_index(drop=False)
+    to_append = pd.DataFrame(
+        [["Total", total_points, total_cash["microsoft"], total_cash["non_microsoft"]]], columns=results_df.columns
+    )
+    results_df = results_df.append(to_append, ignore_index=True).reset_index(drop=True)
+    results_df["Cash Diff"] = results_df["MS Cash"] - results_df["Non-MS Cash"]
+    for col in ["MS Cash", "Non-MS Cash", "Cash Diff"]:
+        results_df[col] = np.round(results_df[col], 2)
+    results_df["points"] = results_df["points"].astype(int).apply(lambda row: f"{row:,}")
+    results_df.rename(columns={"points": "Points"}, inplace=True)
+    if not diff:
+        results_df.drop(columns="Cash Diff", inplace=True)
+    PRINT_SUCCESS(results_df)
 
 
 # Define global variables here
